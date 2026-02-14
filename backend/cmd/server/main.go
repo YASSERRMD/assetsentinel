@@ -18,6 +18,8 @@ import (
 
 func main() {
 	cfg := config.Load()
+	log.Printf("Starting server on port %s", cfg.Port)
+	log.Printf("Database path: %s", cfg.DBPath)
 
 	db, err := repository.NewDB(cfg.DBPath)
 	if err != nil {
@@ -134,6 +136,11 @@ func main() {
 			users.PUT("/:id", handlers.UpdateUser(repo))
 			users.DELETE("/:id", handlers.DeleteUser(repo))
 		}
+	}
+
+	log.Printf("Server starting on http://localhost:%s", cfg.Port)
+	if err := r.Run(":" + cfg.Port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 
 	quit := make(chan os.Signal, 1)
