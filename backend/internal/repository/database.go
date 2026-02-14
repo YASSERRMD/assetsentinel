@@ -99,6 +99,60 @@ func RunMigrations(db *DB) error {
 			FOREIGN KEY (maintenance_plan_id) REFERENCES maintenance_plans(id) ON DELETE CASCADE,
 			FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
 		)`,
+		`CREATE INDEX IF NOT EXISTS idx_mt_org ON maintenance_tasks(organization_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_mt_status ON maintenance_tasks(status)`,
+
+		`CREATE TABLE IF NOT EXISTS work_orders (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL,
+			asset_id INTEGER NOT NULL,
+			technician_id INTEGER,
+			title TEXT NOT NULL,
+			description TEXT,
+			status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'completed', 'closed')),
+			priority TEXT DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high', 'critical')),
+			scheduled_start DATETIME,
+			scheduled_end DATETIME,
+			actual_start DATETIME,
+			actual_end DATETIME,
+			total_cost REAL DEFAULT 0,
+			notes TEXT,
+			created_by INTEGER,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+			FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_wo_org ON work_orders(organization_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_wo_status ON work_orders(status)`,
+
+		`CREATE TABLE IF NOT EXISTS inventory_parts (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL,
+			name TEXT NOT NULL,
+			sku TEXT UNIQUE NOT NULL,
+			quantity INTEGER DEFAULT 0,
+			min_threshold INTEGER DEFAULT 0,
+			cost_per_unit REAL DEFAULT 0,
+			location TEXT,
+			deleted_at DATETIME,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_inv_org ON inventory_parts(organization_id)`,
+
+		`CREATE TABLE IF NOT EXISTS asset_depreciation (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL,
+			asset_id INTEGER NOT NULL,
+			year INTEGER NOT NULL,
+			depreciation_amount REAL NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+			FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+			UNIQUE(asset_id, year)
+		)`,
 	}
 
 	for _, migration := range migrations {
