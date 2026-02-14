@@ -66,6 +66,7 @@ func RunMigrations(db *DB) error {
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_assets_org ON assets(organization_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status)`,
+		`CREATE INDEX IF NOT EXISTS idx_assets_category ON assets(category)`,
 
 		`CREATE TABLE IF NOT EXISTS maintenance_plans (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,6 +102,7 @@ func RunMigrations(db *DB) error {
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_mt_org ON maintenance_tasks(organization_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_mt_status ON maintenance_tasks(status)`,
+		`CREATE INDEX IF NOT EXISTS idx_mt_scheduled ON maintenance_tasks(scheduled_date)`,
 
 		`CREATE TABLE IF NOT EXISTS work_orders (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,10 +123,25 @@ func RunMigrations(db *DB) error {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
-			FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+			FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+			FOREIGN KEY (technician_id) REFERENCES users(id) ON DELETE SET NULL,
+			FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_wo_org ON work_orders(organization_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_wo_status ON work_orders(status)`,
+		`CREATE INDEX IF NOT EXISTS idx_wo_asset ON work_orders(asset_id)`,
+
+		`CREATE TABLE IF NOT EXISTS work_order_parts (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			work_order_id INTEGER NOT NULL,
+			part_id INTEGER NOT NULL,
+			quantity INTEGER NOT NULL,
+			unit_price REAL NOT NULL,
+			total_price REAL NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (work_order_id) REFERENCES work_orders(id) ON DELETE CASCADE,
+			FOREIGN KEY (part_id) REFERENCES inventory_parts(id) ON DELETE CASCADE
+		)`,
 
 		`CREATE TABLE IF NOT EXISTS inventory_parts (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,6 +158,7 @@ func RunMigrations(db *DB) error {
 			FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_inv_org ON inventory_parts(organization_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_inv_sku ON inventory_parts(sku)`,
 
 		`CREATE TABLE IF NOT EXISTS asset_depreciation (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -153,6 +171,23 @@ func RunMigrations(db *DB) error {
 			FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
 			UNIQUE(asset_id, year)
 		)`,
+		`CREATE INDEX IF NOT EXISTS idx_depr_asset ON asset_depreciation(asset_id)`,
+
+		`CREATE TABLE IF NOT EXISTS audit_logs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL,
+			user_id INTEGER,
+			table_name TEXT NOT NULL,
+			record_id INTEGER NOT NULL,
+			action TEXT NOT NULL,
+			old_values TEXT,
+			new_values TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_logs(organization_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_audit_table ON audit_logs(table_name)`,
 	}
 
 	for _, migration := range migrations {

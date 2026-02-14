@@ -9,7 +9,20 @@ services:
       - "8080:8080"
     volumes:
       - ./backend/data:/app/data
+      - ./backend/migrations:/app/migrations
     environment:
       - PORT=8080
       - JWT_SECRET=assetsentinel_secret_key_change_in_production
       - DB_PATH=/app/data/assetsentinel.db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+      - VITE_WS_URL=ws://localhost:8080/ws
+    depends_on:
+      - backend

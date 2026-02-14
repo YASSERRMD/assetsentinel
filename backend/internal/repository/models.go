@@ -22,6 +22,113 @@ type User struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+type Asset struct {
+	ID               uint       `json:"id"`
+	OrganizationID   uint       `json:"organization_id"`
+	Name             string     `json:"name"`
+	Category         string     `json:"category"`
+	SerialNumber     *string    `json:"serial_number"`
+	InstallationDate *time.Time `json:"installation_date"`
+	Location         *string    `json:"location"`
+	PurchaseCost     float64    `json:"purchase_cost"`
+	WarrantyExpiry   *time.Time `json:"warranty_expiry"`
+	Status           string     `json:"status"`
+	DeletedAt        *time.Time `json:"deleted_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}
+
+type MaintenancePlan struct {
+	ID                     uint       `json:"id"`
+	OrganizationID         uint       `json:"organization_id"`
+	AssetID                uint       `json:"asset_id"`
+	FrequencyDays          int        `json:"frequency_days"`
+	EstimatedDurationHours *float64   `json:"estimated_duration_hours"`
+	AssignedRole           *string    `json:"assigned_role"`
+	LastMaintenanceDate    *time.Time `json:"last_maintenance_date"`
+	NextMaintenanceDate    time.Time  `json:"next_maintenance_date"`
+	CreatedAt              time.Time  `json:"created_at"`
+	UpdatedAt              time.Time  `json:"updated_at"`
+}
+
+type MaintenanceTask struct {
+	ID                uint       `json:"id"`
+	OrganizationID    uint       `json:"organization_id"`
+	MaintenancePlanID uint       `json:"maintenance_plan_id"`
+	AssetID           uint       `json:"asset_id"`
+	ScheduledDate     time.Time  `json:"scheduled_date"`
+	Status            string     `json:"status"`
+	CompletedDate     *time.Time `json:"completed_date"`
+	Notes             *string    `json:"notes"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
+}
+
+type WorkOrder struct {
+	ID             uint       `json:"id"`
+	OrganizationID uint       `json:"organization_id"`
+	AssetID        uint       `json:"asset_id"`
+	TechnicianID   *uint      `json:"technician_id"`
+	Title          string     `json:"title"`
+	Description    *string    `json:"description"`
+	Status         string     `json:"status"`
+	Priority       string     `json:"priority"`
+	ScheduledStart *time.Time `json:"scheduled_start"`
+	ScheduledEnd   *time.Time `json:"scheduled_end"`
+	ActualStart    *time.Time `json:"actual_start"`
+	ActualEnd      *time.Time `json:"actual_end"`
+	TotalCost      float64    `json:"total_cost"`
+	Notes          *string    `json:"notes"`
+	CreatedBy      *uint      `json:"created_by"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+}
+
+type WorkOrderPart struct {
+	ID          uint      `json:"id"`
+	WorkOrderID uint      `json:"work_order_id"`
+	PartID      uint      `json:"part_id"`
+	Quantity    int       `json:"quantity"`
+	UnitPrice   float64   `json:"unit_price"`
+	TotalPrice  float64   `json:"total_price"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type InventoryPart struct {
+	ID             uint       `json:"id"`
+	OrganizationID uint       `json:"organization_id"`
+	Name           string     `json:"name"`
+	SKU            string     `json:"sku"`
+	Quantity       int        `json:"quantity"`
+	MinThreshold   int        `json:"min_threshold"`
+	CostPerUnit    float64    `json:"cost_per_unit"`
+	Location       *string    `json:"location"`
+	DeletedAt      *time.Time `json:"deleted_at,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+}
+
+type AssetDepreciation struct {
+	ID                 uint      `json:"id"`
+	OrganizationID     uint      `json:"organization_id"`
+	AssetID            uint      `json:"asset_id"`
+	Year               int       `json:"year"`
+	DepreciationAmount float64   `json:"depreciation_amount"`
+	CreatedAt          time.Time `json:"created_at"`
+}
+
+type AuditLog struct {
+	ID             uint      `json:"id"`
+	OrganizationID uint      `json:"organization_id"`
+	UserID         *uint     `json:"user_id"`
+	TableName      string    `json:"table_name"`
+	RecordID       uint      `json:"record_id"`
+	Action         string    `json:"action"`
+	OldValues      *string   `json:"old_values"`
+	NewValues      *string   `json:"new_values"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
 func (db *DB) CreateOrganization(org *Organization) error {
 	result, err := db.Exec(`INSERT INTO organizations (name) VALUES (?)`, org.Name)
 	if err != nil {

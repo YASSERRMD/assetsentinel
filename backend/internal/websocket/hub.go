@@ -2,10 +2,41 @@ package websocket
 
 import (
 	"encoding/json"
+	"net/http"
 	"sync"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+func (h *Hub) HandleWebSocket(c *gin.Context) {
+	orgID := uint(c.GetFloat64("organization_id"))
+	userID := uint(c.GetFloat64("user_id"))
+
+	if orgID == 0 {
+		c.JSON(401, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		return
+	}
+
+	client := NewClient(h, conn, orgID, userID)
+	h.Register(client)
+
+	go client.WritePump()
+	go client.ReadPump()
+}
 
 type Hub struct {
 	clients    map[uint]map[*Client]bool
@@ -46,6 +77,9 @@ func (h *Hub) Run() {
 				if _, ok := clients[client]; ok {
 					delete(clients, client)
 					close(client.send)
+					if len(clients) == 0 {
+						delete(h.clients, client.orgID)
+					}
 				}
 			}
 			h.mu.Unlock()
@@ -81,19 +115,38 @@ func (h *Hub) BroadcastToOrg(orgID uint, message map[string]interface{}) {
 }
 
 type Client struct {
-	hub    *Hub
-	conn   *websocket.Conn
+	hub  *Hub
+	conn interface {
+		ReadMessage() (messageType int, p []byte, err error)
+		WriteMessage(messageType int, p []byte) error
+		Close() error
+	}
 	send   chan []byte
 	orgID  uint
 	userID uint
 }
 
-func NewClient(hub *Hub, conn *websocket.Conn, orgID, userID uint) *Client {
-	return &Client{hub: hub, conn: conn, send: make(chan []byte, 256), orgID: orgID, userID: userID}
+type ClientConn interface {
+	ReadMessage() (messageType int, p []byte, err error)
+	WriteMessage(messageType int, p []byte) error
+	Close() error
+}
+
+func NewClient(hub *Hub, conn ClientConn, orgID, userID uint) *Client {
+	return &Client{
+		hub:    hub,
+		conn:   conn,
+		send:   make(chan []byte, 256),
+		orgID:  orgID,
+		userID: userID,
+	}
 }
 
 func (c *Client) ReadPump() {
-	defer func() { c.hub.Unregister(c); c.conn.Close() }()
+	defer func() {
+		c.hub.Unregister(c)
+		c.conn.Close()
+	}()
 	for {
 		_, _, err := c.conn.ReadMessage()
 		if err != nil {
