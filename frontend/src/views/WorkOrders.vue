@@ -52,7 +52,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { workOrders } from '../services/api'
+import { workOrders as workOrdersApi } from '../services/api'
 
 const workOrders = ref([])
 const showForm = ref(false)
@@ -60,10 +60,10 @@ const editingId = ref(null)
 const filters = ref({ status: '' })
 const form = ref({ title: '', asset_id: null, technician_id: null, description: '', status: 'pending', priority: 'medium', scheduled_start: '', scheduled_end: '', total_cost: 0, notes: '' })
 
-const fetchOrders = async () => { try { const { data } = await workOrders.list({ ...filters.value }); workOrders.value = data.data } catch (err) { console.error(err) } }
-const saveOrder = async () => { try { if (editingId.value) await workOrders.update(editingId.value, form.value); else await workOrders.create(form.value); closeForm(); fetchOrders() } catch (err) { console.error(err) } }
+const fetchOrders = async () => { try { const { data } = await workOrdersApi.list({ ...filters.value }); workOrders.value = data.data } catch (err) { console.error(err) } }
+const saveOrder = async () => { try { if (editingId.value) await workOrdersApi.update(editingId.value, form.value); else await workOrdersApi.create(form.value); closeForm(); fetchOrders() } catch (err) { console.error(err) } }
 const editOrder = (wo) => { editingId.value = wo.id; form.value = { ...wo }; showForm.value = true }
-const deleteOrder = async (id) => { if (confirm('Delete this work order?')) { await workOrders.delete(id); fetchOrders() } }
+const deleteOrder = async (id) => { if (confirm('Delete this work order?')) { await workOrdersApi.delete(id); fetchOrders() } }
 const closeForm = () => { showForm.value = false; editingId.value = null; form.value = { title: '', asset_id: null, technician_id: null, description: '', status: 'pending', priority: 'medium', scheduled_start: '', scheduled_end: '', total_cost: 0, notes: '' } }
 onMounted(fetchOrders)
 </script>

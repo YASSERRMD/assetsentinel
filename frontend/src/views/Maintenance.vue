@@ -37,17 +37,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { maintenance } from '../services/api'
+import { maintenance as maintenanceApi } from '../services/api'
 
 const plans = ref([])
 const showForm = ref(false)
 const editingId = ref(null)
 const form = ref({ asset_id: null, frequency_days: 30, estimated_duration_hours: null, next_maintenance_date: '', assigned_role: '' })
 
-const fetchPlans = async () => { try { const { data } = await maintenance.list(); plans.value = data.data } catch (err) { console.error(err) } }
-const savePlan = async () => { try { if (editingId.value) await maintenance.update(editingId.value, form.value); else await maintenance.create(form.value); closeForm(); fetchPlans() } catch (err) { console.error(err) } }
+const fetchPlans = async () => { try { const { data } = await maintenanceApi.list(); plans.value = data.data } catch (err) { console.error(err) } }
+const savePlan = async () => { try { if (editingId.value) await maintenanceApi.update(editingId.value, form.value); else await maintenanceApi.create(form.value); closeForm(); fetchPlans() } catch (err) { console.error(err) } }
 const editPlan = (plan) => { editingId.value = plan.id; form.value = { ...plan }; showForm.value = true }
-const deletePlan = async (id) => { if (confirm('Delete this plan?')) { await maintenance.delete(id); fetchPlans() } }
+const deletePlan = async (id) => { if (confirm('Delete this plan?')) { await maintenanceApi.delete(id); fetchPlans() } }
 const closeForm = () => { showForm.value = false; editingId.value = null; form.value = { asset_id: null, frequency_days: 30, estimated_duration_hours: null, next_maintenance_date: '', assigned_role: '' } }
 onMounted(fetchPlans)
 </script>
