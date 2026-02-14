@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/data:/app/data
+    environment:
+      - PORT=8080
+      - JWT_SECRET=assetsentinel_secret_key_change_in_production
+      - DB_PATH=/app/data/assetsentinel.db
