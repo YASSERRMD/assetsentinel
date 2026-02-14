@@ -19,8 +19,6 @@ RUN apk add --no-cache ca-certificates sqlite
 WORKDIR /app
 
 COPY --from=builder /assetsentinel .
-COPY backend/migrations ./migrations
-COPY backend/data ./data
 
 EXPOSE 8080
 
